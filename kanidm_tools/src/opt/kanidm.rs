@@ -82,6 +82,12 @@ pub struct AccountCommonOpt {
     account_id: String,
 }
 
+impl AccountOptT for AccountCommonOpt {
+    fn get_account_id(&self, _c: &KanidmClient) -> Result<String, String> {
+       Ok(self.account_id.clone())
+    }
+}
+
 #[derive(Debug, StructOpt)]
 pub struct AccountCredentialSet {
     #[structopt(flatten)]
@@ -219,10 +225,29 @@ pub enum AccountPosix {
     SetPassword(AccountNamedOpt),
 }
 
+pub trait AccountOptT {
+    fn get_account_id(&self, c: &KanidmClient) -> Result<String, String>;
+}
+
 #[derive(Debug, StructOpt)]
-pub struct AccountPersonOpt {
+pub struct AccountSelf { }
+
+impl AccountOptT for AccountSelf {
+    fn get_account_id(&self, c: &KanidmClient) -> Result<String, String> {
+        match c.whoami() {
+            Ok(None) => Err("Account not found; maybe deleted?".into()),
+            Ok(Some(ent)) => Ok(ent.1.uuid.to_string()),
+            Err(e) => Err(format!("Error getting self account: {:?}", e)),
+        }
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct PersonOpt<T>
+    where T: AccountOptT + StructOpt,
+{
     #[structopt(flatten)]
-    aopts: AccountCommonOpt,
+    aopts: T,
     #[structopt(long = "mail")]
     mail: Option<Vec<String>>,
     #[structopt(long = "legalname")]
@@ -234,9 +259,9 @@ pub struct AccountPersonOpt {
 #[derive(Debug, StructOpt)]
 pub enum AccountPerson {
     #[structopt(name = "extend")]
-    Extend(AccountPersonOpt),
+    Extend(PersonOpt<AccountCommonOpt>),
     #[structopt(name = "set")]
-    Set(AccountPersonOpt),
+    Set(PersonOpt<AccountCommonOpt>),
 }
 
 #[derive(Debug, StructOpt)]
@@ -372,6 +397,14 @@ pub enum SelfOpt {
     #[structopt(name = "set_password")]
     /// Set the current user's password
     SetPassword(CommonOpt),
+    #[structopt(name = "person")]
+    Person(SelfPerson),
+}
+
+#[derive(Debug, StructOpt)]
+pub enum SelfPerson {
+    #[structopt(name = "set")]
+    Set(PersonOpt<AccountSelf>),
 }
 
 #[derive(Debug, StructOpt)]

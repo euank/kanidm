@@ -15,6 +15,7 @@ extern crate tracing;
 
 use std::path::PathBuf;
 use structopt::StructOpt;
+use kanidm_client::KanidmClient;
 
 include!("../opt/kanidm.rs");
 
@@ -32,6 +33,7 @@ impl SelfOpt {
         match self {
             SelfOpt::Whoami(copt) => copt.debug,
             SelfOpt::SetPassword(copt) => copt.debug,
+            SelfOpt::Person(SelfPerson::Set(copt)) => copt.copt.debug,
         }
     }
 
@@ -56,7 +58,6 @@ impl SelfOpt {
                     Err(e) => println!("Error: {:?}", e),
                 }
             }
-
             SelfOpt::SetPassword(copt) => {
                 let client = copt.to_client();
 
@@ -69,6 +70,23 @@ impl SelfOpt {
                 };
 
                 if let Err(e) = client.idm_account_set_password(password) {
+                    error!("Error -> {:?}", e);
+                }
+            }
+            SelfOpt::Person(SelfPerson::Set(copt)) => {
+                let client = copt.copt.to_client();
+                let aid = match copt.aopts.get_account_id(&client) {
+                    Ok(id) => id,
+                    Err(e) => {
+                        error!("Error resolving self account: {:?}", e);
+                        return;
+                    }
+                };
+                if let Err(e) = client.idm_account_person_set(
+                    &aid,
+                    copt.mail.as_deref(),
+                    copt.legalname.as_deref(),
+                    ) {
                     error!("Error -> {:?}", e);
                 }
             }

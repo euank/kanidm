@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use structopt::clap::Shell;
 use structopt::StructOpt;
+use kanidm_client::KanidmClient;
 
 include!("src/opt/ssh_authorizedkeys.rs");
 include!("src/opt/badlist_preprocess.rs");
