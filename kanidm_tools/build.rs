@@ -3,9 +3,9 @@
 use std::env;
 use std::path::PathBuf;
 
+use kanidm_client::KanidmClient;
 use structopt::clap::Shell;
 use structopt::StructOpt;
-use kanidm_client::KanidmClient;
 
 include!("src/opt/ssh_authorizedkeys.rs");
 include!("src/opt/badlist_preprocess.rs");

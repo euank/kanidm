@@ -408,14 +408,7 @@ impl AccountOpt {
                     }
                 }
                 AccountPerson::Set(aopt) => {
-                    let client = aopt.copt.to_client();
-                    if let Err(e) = client.idm_account_person_set(
-                        aopt.aopts.account_id.as_str(),
-                        aopt.mail.as_deref(),
-                        aopt.legalname.as_deref(),
-                    ) {
-                        error!("Error -> {:?}", e);
-                    }
+                    aopt.set();
                 }
             }, // end AccountOpt::Person
             AccountOpt::Ssh(asopt) => match asopt {

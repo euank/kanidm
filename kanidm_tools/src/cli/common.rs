@@ -1,10 +1,11 @@
 use crate::session::read_tokens;
-use crate::CommonOpt;
+use crate::{AccountOptT, CommonOpt, PersonOpt};
 use compact_jwt::{Jws, JwsUnverified};
 use dialoguer::{theme::ColorfulTheme, Select};
 use kanidm_client::{KanidmClient, KanidmClientBuilder};
 use kanidm_proto::v1::UserAuthToken;
 use std::str::FromStr;
+use structopt::StructOpt;
 
 impl CommonOpt {
     pub fn to_unauth_client(&self) -> KanidmClient {
@@ -170,6 +171,27 @@ pub fn prompt_for_username_get_values() -> Result<(String, String), String> {
         None => {
             error!("Memory corruption trying to read token store, quitting!");
             std::process::exit(1);
+        }
+    }
+}
+
+impl<T> PersonOpt<T>
+where
+    T: AccountOptT + StructOpt,
+{
+    pub fn set(&self) {
+        let client = self.copt.to_client();
+        let aid = match self.aopts.get_account_id(&client) {
+            Ok(id) => id,
+            Err(e) => {
+                error!("Error resolving self account: {:?}", e);
+                return;
+            }
+        };
+        if let Err(e) =
+            client.idm_account_person_set(&aid, self.mail.as_deref(), self.legalname.as_deref())
+        {
+            error!("Error -> {:?}", e);
         }
     }
 }
